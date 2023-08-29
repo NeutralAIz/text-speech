@@ -73,7 +73,7 @@ class AWSTextToSpeechTool(BaseTool):
 
             response = polly_client.start_speech_synthesis_task(
                 #TaskId=filename,
-                OutputS3KeyPrefix=path,
+                OutputS3KeyPrefix=path.strip('/'),
                 VoiceId=voiceId,
                 OutputS3BucketName=self.s3_bucket_name,
                 OutputFormat='mp3', 
