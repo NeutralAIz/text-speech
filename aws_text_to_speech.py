@@ -52,7 +52,7 @@ class AWSTextToSpeechTool(BaseTool):
         "Female": {"Adult": ["Joanna", "Kendra","Kimberly","Salli"], "Child": ["Ivy", "Ruth"]}
     }
     
-    def _execute(self, text: str, path: str, fileprefix: str, gender: Optional[str] = None, age: Optional[str] = None, ssml: Optional[bool] = False):
+    def _execute(self, text: str, path: str, fileprefix: str, gender: Optional[str] = None, age: Optional[str] = None, voiceId: Optional[str] = None, ssml: Optional[bool] = False):
         try:
             aws_access_key_id = get_config("AWS_ACCESS_KEY_ID")
             aws_secret_access_key = get_config("AWS_SECRET_ACCESS_KEY")
@@ -63,13 +63,14 @@ class AWSTextToSpeechTool(BaseTool):
                 region_name=self.region_name
             ).client('polly')
             
-            if gender and age:
-                assert gender in self.voices and age in self.voices[gender]
-                voiceId = random.choice(self.voices[gender][age])
-            else:
-                gender = random.choice(list(self.voices.keys()))
-                age = random.choice(list(self.voices[gender].keys()))
-                voiceId = random.choice(self.voices[gender][age])
+            if voiceId is None:
+                if gender and age:
+                    assert gender in self.voices and age in self.voices[gender]
+                    voiceId = random.choice(self.voices[gender][age])
+                else:
+                    gender = random.choice(list(self.voices.keys()))
+                    age = random.choice(list(self.voices[gender].keys()))
+                    voiceId = random.choice(self.voices[gender][age])
 
             response = polly_client.start_speech_synthesis_task(
                 #TaskId=filename,
