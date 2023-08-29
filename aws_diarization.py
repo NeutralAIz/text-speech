@@ -60,54 +60,54 @@ class AWSDiarizationTool(BaseTool):
             logger.error(f"Error occured.\n\n{traceback.format_exc()}")
             return f"Error occured.\n\n{traceback.format_exc()}
         
-    def get_data(self, data):
-        transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
-        response = requests.get(transcript_url)
-        if response.status_code == 200:
-            return response.text
-        else:
-            return f"Error occured.\n\n{traceback.format_exc()}
+    # def get_data(self, data):
+    #     transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
+    #     response = requests.get(transcript_url)
+    #     if response.status_code == 200:
+    #         return response.text
+    #     else:
+    #         return f"Error occured.\n\n{traceback.format_exc()}
         
-    def process_results(self, data):
-        segments = data['results']['speaker_labels']['segments']
-        items = data['results']['items']
+    # def process_results(self, data):
+    #     segments = data['results']['speaker_labels']['segments']
+    #     items = data['results']['items']
 
-        master_transcript = {}
-        confidences = []
+    #     master_transcript = {}
+    #     confidences = []
 
-        for seg in segments:
-            speaker = seg['speaker_label']
-            start_time = float(seg['start_time'])
-            end_time = float(seg['end_time'])
+    #     for seg in segments:
+    #         speaker = seg['speaker_label']
+    #         start_time = float(seg['start_time'])
+    #         end_time = float(seg['end_time'])
             
-            this_segment = {}
+    #         this_segment = {}
             
-            for item in items:
-                if 'start_time' in item.keys():
-                    item_start = float(item['start_time'])
-                    item_end = float(item['end_time'])
-                    if item_start >= start_time and item_end <= end_time:
-                        confidences.append(float(item['alternatives'][0]['confidence']))
-                        if 'content' in item['alternatives'][0].keys():
-                            word = item['alternatives'][0]['content']
-                            if speaker in this_segment.keys():
-                                this_segment[speaker].append(word)
-                            else:
-                                this_segment[speaker] = [word]
+    #         for item in items:
+    #             if 'start_time' in item.keys():
+    #                 item_start = float(item['start_time'])
+    #                 item_end = float(item['end_time'])
+    #                 if item_start >= start_time and item_end <= end_time:
+    #                     confidences.append(float(item['alternatives'][0]['confidence']))
+    #                     if 'content' in item['alternatives'][0].keys():
+    #                         word = item['alternatives'][0]['content']
+    #                         if speaker in this_segment.keys():
+    #                             this_segment[speaker].append(word)
+    #                         else:
+    #                             this_segment[speaker] = [word]
             
-            master_transcript.update(this_segment)
+    #         master_transcript.update(this_segment)
 
-        total_length = 0
-        for seg in segments:
-            total_length += (float(seg['end_time']) - float(seg['start_time'])) * 1000
+    #     total_length = 0
+    #     for seg in segments:
+    #         total_length += (float(seg['end_time']) - float(seg['start_time'])) * 1000
 
-        average_confidence = sum(confidences)/len(confidences)
+    #     average_confidence = sum(confidences)/len(confidences)
 
-        result_text = ""
+    #     result_text = ""
 
-        for speaker, words in master_transcript.items():
-            result_text = result_text + f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}'
+    #     for speaker, words in master_transcript.items():
+    #         result_text = result_text + f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}'
 
-        result_text = result_text + f'\nTotal Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}'
+    #     result_text = result_text + f'\nTotal Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}'
 
-        return result_text
+    #     return result_text
