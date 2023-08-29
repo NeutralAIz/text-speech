@@ -64,7 +64,7 @@ class AWSTextToSpeechTool(BaseTool):
                 voiceId = random.choice(self.voices[gender][age])
 
             response = polly_client.start_speech_synthesis_task(
-                TaskId=filename,
+                #TaskId=filename,
                 OutputS3KeyPrefix=path,
                 VoiceId=voiceId,
                 OutputS3BucketName=self.s3_bucket_name,
@@ -89,9 +89,9 @@ class AWSTextToSpeechTool(BaseTool):
             if task_status['SynthesisTask']['TaskStatus'] == 'COMPLETED':
                 print("Text to Speech conversion completed!")
             else:
-                print(f"Task failed with status: {task_status['SynthesisTask']['TaskStatus']}")
+                raise Exception(f"Task failed with status: {task_status['SynthesisTask']['TaskStatus']}")
 
             return task_status
         except:
             logger.error(f"Error occured.\n\n{traceback.format_exc()}")
-            return None
+            return {traceback.format_exc()}
