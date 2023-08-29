@@ -15,11 +15,11 @@ class AWSTextToSpeechSchema(BaseModel):
     )
     path: str = Field(
         ..., 
-        description="Path of the S3 bucket to save the audio file (hardcoded start at resources/app/workspace)"
+        description="Path of the S3 bucket to save the audio file (hardcoded start at resources/app/workspace/)"
     )
-    filename: str = Field(
+    fileprefix: str = Field(
         ..., 
-        description="Name for the audio file to be saved",
+        description="Prefix prepended to the audio file to be saved",
     )
     gender: Optional[str] = Field(
         None,
@@ -52,7 +52,7 @@ class AWSTextToSpeechTool(BaseTool):
         "Female": {"Adult": ["Joanna", "Kendra","Kimberly","Salli"], "Child": ["Ivy", "Ruth"]}
     }
     
-    def _execute(self, text: str, path: str, filename: str, gender: Optional[str] = None, age: Optional[str] = None, ssml: Optional[bool] = False):
+    def _execute(self, text: str, path: str, fileprefix: str, gender: Optional[str] = None, age: Optional[str] = None, ssml: Optional[bool] = False):
         try:
             aws_access_key_id = get_config("AWS_ACCESS_KEY_ID")
             aws_secret_access_key = get_config("AWS_SECRET_ACCESS_KEY")
@@ -73,7 +73,7 @@ class AWSTextToSpeechTool(BaseTool):
 
             response = polly_client.start_speech_synthesis_task(
                 #TaskId=filename,
-                OutputS3KeyPrefix=path.strip('/'),
+                OutputS3KeyPrefix=path.strip('/') + "/" + fileprefix,
                 VoiceId=voiceId,
                 OutputS3BucketName=self.s3_bucket_name,
                 OutputFormat='mp3', 
