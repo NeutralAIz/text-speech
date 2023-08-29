@@ -88,7 +88,7 @@ class AWSTextToSpeechTool(BaseTool):
             start_time = time.time()  # get the current time
 
             while task_status['SynthesisTask']['TaskStatus'].upper() in ['INPROGRESS', 'SCHEDULED']:
-                if time.time() - start_time > 30:  # if more than 30 seconds have passed
+                if time.time() - start_time > 120:  # if more than 30 seconds have passed
                     print("Operation timed out.")
                     break
                 print("Text to Speech conversion in progress...")
