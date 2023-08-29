@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from superagi.tools.base_tool import BaseTool
 from superagi.config.config import get_config
 from superagi.lib.logger import logger
+import requests
 
 class AWSDiarizationSchema(BaseModel):
     path: str = Field(
@@ -54,7 +55,55 @@ class AWSDiarizationTool(BaseTool):
                     break
                 time.sleep(5)
             
-            return status  
+            return self.process_results(self.get_data(status))
         except:
             logger.error(f"Error occured.\n\n{traceback.format_exc()}")
             return None
+        
+    def get_data(self, data):
+        transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
+        response = requests.get(transcript_url)
+        if response.status_code == 200:
+            return response.text
+        else:
+            return None
+        
+    def process_results(self, data):
+        segments = data['results']['speaker_labels']['segments']
+        items = data['results']['items']
+
+        master_transcript = {}
+        confidences = []
+
+        for seg in segments:
+            speaker = seg['speaker_label']
+            start_time = float(seg['start_time'])
+            end_time = float(seg['end_time'])
+            
+            this_segment = {}
+            
+            for item in items:
+                if 'start_time' in item.keys():
+                    item_start = float(item['start_time'])
+                    item_end = float(item['end_time'])
+                    if item_start >= start_time and item_end <= end_time:
+                        confidences.append(float(item['alternatives'][0]['confidence']))
+                        if 'content' in item['alternatives'][0].keys():
+                            word = item['alternatives'][0]['content']
+                            if speaker in this_segment.keys():
+                                this_segment[speaker].append(word)
+                            else:
+                                this_segment[speaker] = [word]
+            
+            master_transcript.update(this_segment)
+
+        total_length = 0
+        for seg in segments:
+            total_length += (float(seg['end_time']) - float(seg['start_time'])) * 1000
+
+        average_confidence = sum(confidences)/len(confidences)
+
+        for speaker, words in master_transcript.items():
+            print(f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}')
+
+        print(f'\nTotal Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}')
