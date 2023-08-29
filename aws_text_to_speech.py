@@ -65,7 +65,7 @@ class AWSTextToSpeechTool(BaseTool):
                 voiceId = random.choice(self.voices[gender][age])
 
             response = polly_client.start_speech_synthesis_task(
-                OutputS3KeyPrefix=self.root_path + path
+                OutputS3KeyPrefix=self.root_path + path,
                 VoiceId=voiceId,
                 OutputS3BucketName=self.s3_bucket_name,
                 OutputFormat='mp3', 
