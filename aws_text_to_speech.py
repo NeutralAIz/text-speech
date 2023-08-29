@@ -29,6 +29,7 @@ class AWSTextToSpeechTool(BaseTool):
 
     s3_bucket_name = "neutralaiz-superagi-demo"
     job_name_prefix = "AWSTextToSpeechJob"
+    region_name = 'us-east-1'
 
     voices = {
         "Male": {"Adult": ["Joey", "Matthew"], "Child": ["Justin", "Kevin"]},
@@ -43,7 +44,7 @@ class AWSTextToSpeechTool(BaseTool):
             polly_client = boto3.Session(
                 aws_access_key_id=aws_access_key_id,                  
                 aws_secret_access_key=aws_secret_access_key,
-                region_name='eu-west-2'
+                region_name=self.region_name
             ).client('polly')
             
             if gender and age:
