@@ -31,7 +31,7 @@ class AWSTextToSpeechSchema(BaseModel):
     )
     voice: Optional[str] = Field(
         None,
-        description='Available voices: Male: <Adult: [Joey, Matthew], Child: [Justin, Kevin]>, Female: <Adult: [Joanna, Kendra, Kimberly, Salli], Child: [Ivy, Ruth]>'
+        description='Voice to use.  Leave blank for random.'
     )
     ssml: Optional[bool] = Field(
         False,
@@ -40,7 +40,7 @@ class AWSTextToSpeechSchema(BaseModel):
 
 class AWSTextToSpeechTool(BaseTool):
     name = "AWS Text To Speech Tool"
-    description = "Text To Speech tool that converts given text into speech and store the audio file into an S3 bucket"
+    description = "Text To Speech tool that converts given text into speech and store the audio file into an S3 bucket.  Available voices: Male: <Adult: [Joey, Matthew], Child: [Justin, Kevin]>, Female: <Adult: [Joanna, Kendra, Kimberly, Salli], Child: [Ivy, Ruth]>"
     args_schema: Type[AWSTextToSpeechSchema] = AWSTextToSpeechSchema
 
     s3_bucket_name = "neutralaiz-superagi-demo"
