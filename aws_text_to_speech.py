@@ -38,7 +38,6 @@ class AWSTextToSpeechTool(BaseTool):
     s3_bucket_name = "neutralaiz-superagi-demo"
     job_name_prefix = "AWSTextToSpeechJob"
     region_name = 'us-east-1'
-    root_path = '/resources/app/workspace/'
 
     voices = {
         "Male": {"Adult": ["Joey", "Matthew"], "Child": ["Justin", "Kevin"]},
@@ -65,7 +64,8 @@ class AWSTextToSpeechTool(BaseTool):
                 voiceId = random.choice(self.voices[gender][age])
 
             response = polly_client.start_speech_synthesis_task(
-                OutputS3KeyPrefix=self.root_path + path,
+                TaskId=filename,
+                OutputS3KeyPrefix=path,
                 VoiceId=voiceId,
                 OutputS3BucketName=self.s3_bucket_name,
                 OutputFormat='mp3', 
