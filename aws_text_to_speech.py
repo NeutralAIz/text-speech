@@ -79,7 +79,7 @@ class AWSTextToSpeechTool(BaseTool):
                 OutputFormat='mp3', 
                 Text=text,
                 Engine='neural',
-                TextType='ssml' if ssml else 'plain text'
+                TextType='ssml' if ssml else 'text'
             )
 
             taskId = response['SynthesisTask']['TaskId']
