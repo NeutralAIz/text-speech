@@ -89,7 +89,7 @@ class AWSTextToSpeechTool(BaseTool):
             if task_status['SynthesisTask']['TaskStatus'] == 'COMPLETED':
                 print("Text to Speech conversion completed!")
             else:
-                print(f"Task failed with reason: {task_status['SynthesisTask']['TaskStatusReason']}")
+                print(f"Task failed with status: {task_status['SynthesisTask']['TaskStatus']}")
 
             return task_status
         except:
