@@ -11,11 +11,11 @@ from superagi.lib.logger import logger
 class AWSTextToSpeechSchema(BaseModel):
     text: str = Field(
         ...,
-        description="Text to be converted into speech",
+        description="Text to be converted into speech.  Can optionally contain SSML.",
     )
     path: str = Field(
         ..., 
-        description="Path of the S3 bucket to save the audio file (path hardcoded start at /resources/app/workspace/)"
+        description="Path of the S3 bucket to save the audio file (hardcoded start at resources/app/workspace)"
     )
     filename: str = Field(
         ..., 
@@ -28,6 +28,14 @@ class AWSTextToSpeechSchema(BaseModel):
     age: Optional[str] = Field(
         None,
         description="Age of the voice (Adult/Child)"
+    )
+    voice: Optional[str] = Field(
+        None,
+        description='Available voices: Male: <Adult: [Joey, Matthew], Child: [Justin, Kevin]>, Female: <Adult: [Joanna, Kendra, Kimberly, Salli], Child: [Ivy, Ruth]>'
+    )
+    ssml: Optional[bool] = Field(
+        False,
+        description="Does the text contain SSML codes?"
     )
 
 class AWSTextToSpeechTool(BaseTool):
@@ -44,7 +52,7 @@ class AWSTextToSpeechTool(BaseTool):
         "Female": {"Adult": ["Joanna", "Kendra","Kimberly","Salli"], "Child": ["Ivy", "Ruth"]}
     }
     
-    def _execute(self, text: str, path: str, filename: str, gender: Optional[str] = None, age: Optional[str] = None):
+    def _execute(self, text: str, path: str, filename: str, gender: Optional[str] = None, age: Optional[str] = None, ssml: Optional[bool] = False):
         try:
             aws_access_key_id = get_config("AWS_ACCESS_KEY_ID")
             aws_secret_access_key = get_config("AWS_SECRET_ACCESS_KEY")
@@ -70,7 +78,8 @@ class AWSTextToSpeechTool(BaseTool):
                 OutputS3BucketName=self.s3_bucket_name,
                 OutputFormat='mp3', 
                 Text=text,
-                Engine='neural'
+                Engine='neural',
+                TextType='ssml' if ssml else 'plain text'
             )
 
             taskId = response['SynthesisTask']['TaskId']
@@ -86,7 +95,7 @@ class AWSTextToSpeechTool(BaseTool):
                 time.sleep(5)
                 task_status = polly_client.get_speech_synthesis_task(TaskId = taskId)
 
-            if task_status['SynthesisTask']['TaskStatus'] == 'COMPLETED':
+            if task_status['SynthesisTask']['TaskStatus'].upper() == 'COMPLETED':
                 print("Text to Speech conversion completed!")
             else:
                 raise Exception(f"Task failed with status: {task_status['SynthesisTask']['TaskStatus']}")
