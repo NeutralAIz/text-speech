@@ -65,7 +65,12 @@ class AWSTextToSpeechTool(BaseTool):
             taskId = response['SynthesisTask']['TaskId']
             task_status = polly_client.get_speech_synthesis_task(TaskId = taskId)
 
+            start_time = time.time()  # get the current time
+
             while task_status['SynthesisTask']['TaskStatus'] == 'IN_PROGRESS':
+                if time.time() - start_time > 30:  # if more than 30 seconds have passed
+                    print("Operation timed out.")
+                    break
                 print("Text to Speech conversion in progress...")
                 time.sleep(5)
                 task_status = polly_client.get_speech_synthesis_task(TaskId = taskId)
