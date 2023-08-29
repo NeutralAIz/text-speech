@@ -58,7 +58,7 @@ class AWSDiarizationTool(BaseTool):
             return self.process_results(self.get_data(status))
         except:
             logger.error(f"Error occured.\n\n{traceback.format_exc()}")
-            return None
+            return f"Error occured.\n\n{traceback.format_exc()}
         
     def get_data(self, data):
         transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
@@ -66,7 +66,7 @@ class AWSDiarizationTool(BaseTool):
         if response.status_code == 200:
             return response.text
         else:
-            return None
+            return f"Error occured.\n\n{traceback.format_exc()}
         
     def process_results(self, data):
         segments = data['results']['speaker_labels']['segments']
@@ -103,7 +103,11 @@ class AWSDiarizationTool(BaseTool):
 
         average_confidence = sum(confidences)/len(confidences)
 
-        for speaker, words in master_transcript.items():
-            print(f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}')
+        result_text = ""
 
-        print(f'\nTotal Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}')
+        for speaker, words in master_transcript.items():
+            result_text = result_text + f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}'
+
+        result_text = result_text + f'\nTotal Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}'
+
+        return result_text
