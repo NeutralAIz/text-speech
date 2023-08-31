@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 from superagi.tools.base_tool import BaseTool
 from superagi.config.config import get_config
 from superagi.lib.logger import logger
-import requests
 import random
 import string
 from aws_helpers import add_file_to_resources, get_file_content
@@ -14,11 +13,11 @@ from aws_helpers import add_file_to_resources, get_file_content
 class AWSDiarizationSchema(BaseModel):
     path: str = Field(
         ...,
-        description="Path of the audio file",
+        description="Directory path inside the bucket (blank if in root)",
     )
     file_name: str = Field(
         ...,
-        description="Name of the audio file",
+        description="Name of the target audio file",
     )
 
 class AWSDiarizationTool(BaseTool):
@@ -110,52 +109,48 @@ class AWSDiarizationTool(BaseTool):
 
     def process_results(self, data):
         try:
-            segments = data.get('results', {}).get('speaker_labels', {}).get('segments', [])
-            items = data.get('results', {}).get('items', [])
+            if 'speaker_labels' in data['results']:
+                segments = data['results']['speaker_labels']['segments']
+            else:
+                segments = [{'start_time': item['start_time'], 'end_time': item['end_time'], 
+                            'speaker_label': 'spk_0'} for item in data['results']['items'] if 'start_time' in item]
+                            
+            speakers = data['results']['speaker_labels']['speakers'] if 'speaker_labels' in data['results'] else 1
+            items = data['results']['items']
 
-            if not segments or not items:
-                return "No segments or items found in the data."
-
-            master_transcript = {}
+            master_transcript = {f'spk_{i}': [] for i in range(speakers)}
             confidences = []
 
             for seg in segments:
                 speaker = seg['speaker_label']
                 start_time = float(seg['start_time'])
                 end_time = float(seg['end_time'])
-                
-                this_segment = {}
-                
+
                 for item in items:
-                    if 'start_time' in item.keys():
+                    if 'start_time' in item.keys() and ('speaker_label' not in item or item['speaker_label'] == speaker):
                         item_start = float(item['start_time'])
                         item_end = float(item['end_time'])
                         if item_start >= start_time and item_end <= end_time:
-                            confidences.append(float(item['alternatives'][0]['confidence']))
+                            if 'confidence' in item['alternatives'][0].keys():
+                                confidences.append(float(item['alternatives'][0]['confidence']))
                             if 'content' in item['alternatives'][0].keys():
                                 word = item['alternatives'][0]['content']
-                                if speaker in this_segment.keys():
-                                    this_segment[speaker].append(word)
-                                else:
-                                    this_segment[speaker] = [word]
-                
-                master_transcript.update(this_segment)
+                                master_transcript[speaker].append(word)
 
             total_length = 0
             for seg in segments:
                 total_length += (float(seg['end_time']) - float(seg['start_time'])) * 1000
 
-            average_confidence = sum(confidences)/len(confidences) if confidences else 0
+            average_confidence = sum(confidences)/len(confidences) if confidences else 0.0
 
-            result_text = ""
+            result_text = ''
 
             for speaker, words in master_transcript.items():
-                result_text = result_text + f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}'
+                result_text += f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}\n'
 
-            result_text = result_text + f'\nTotal Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}'
+            result_text += f'Total Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}'
         
             return result_text
 
         except Exception as e:
-            logger.error(f"Error occured. data: {data}, \n\n{traceback.format_exc()}")
-            return str(e)
+            logger.error(f"Error occurred. data: {data}, \n\n{traceback.format_exc()}")
