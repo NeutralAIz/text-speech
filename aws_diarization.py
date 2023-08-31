@@ -110,8 +110,11 @@ class AWSDiarizationTool(BaseTool):
 
     def process_results(self, data):
         try:
-            segments = data['results']['speaker_labels']['segments']
-            items = data['results']['items']
+            segments = data.get('results', {}).get('speaker_labels', {}).get('segments', [])
+            items = data.get('results', {}).get('items', [])
+
+            if not segments or not items:
+                return "No segments or items found in the data."
 
             master_transcript = {}
             confidences = []
@@ -142,7 +145,7 @@ class AWSDiarizationTool(BaseTool):
             for seg in segments:
                 total_length += (float(seg['end_time']) - float(seg['start_time'])) * 1000
 
-            average_confidence = sum(confidences)/len(confidences)
+            average_confidence = sum(confidences)/len(confidences) if confidences else 0
 
             result_text = ""
 
@@ -153,5 +156,6 @@ class AWSDiarizationTool(BaseTool):
         
             return result_text
 
-        except:
+        except Exception as e:
             logger.error(f"Error occured. data: {data}, \n\n{traceback.format_exc()}")
+            return str(e)
