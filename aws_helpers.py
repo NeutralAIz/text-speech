@@ -65,4 +65,4 @@ def add_file_to_resources(session, file_name, agent_id: int, agent_execution_id:
     logger.info(f"Target:{file_name}")
     agent = Agent.get_agent_from_id(session, agent_id)
     agent_execution = AgentExecution.get_agent_execution_from_id(session, agent_execution_id)
-    ResourceHelper.make_written_file_resource(file_name, agent, agent_execution, session)
+    return ResourceHelper.make_written_file_resource(file_name, agent, agent_execution, session)
