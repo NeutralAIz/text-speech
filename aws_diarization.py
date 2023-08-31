@@ -7,6 +7,8 @@ from superagi.tools.base_tool import BaseTool
 from superagi.config.config import get_config
 from superagi.lib.logger import logger
 import requests
+import random
+import string
 
 class AWSDiarizationSchema(BaseModel):
     path: str = Field(
@@ -31,6 +33,8 @@ class AWSDiarizationTool(BaseTool):
     
     def _execute(self, path: str, file_name: str):
         try:
+            unique_string = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=6))
+
             path = path.replace('s3://','')
             if self.s3_bucket_name in path:
                 path = path.replace(self.s3_bucket_name, "").lstrip("/")  
@@ -39,7 +43,7 @@ class AWSDiarizationTool(BaseTool):
                 path = '' 
             
             job_name = self.job_name_prefix + "_" + file_name
-            job_uri = "s3://" + self.s3_bucket_name + (path if path in (None, "") else "/" + path) + "/" + file_name
+            job_uri = "s3://" + self.s3_bucket_name + (path if path in (None, "") else "/" + path) + "/" + unique_string + "_" + file_name
             
             aws_access_key_id = get_config("AWS_ACCESS_KEY_ID")
             aws_secret_access_key = get_config("AWS_SECRET_ACCESS_KEY")   
