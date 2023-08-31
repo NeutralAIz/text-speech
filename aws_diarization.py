@@ -31,8 +31,11 @@ class AWSDiarizationTool(BaseTool):
     
     def _execute(self, path: str, file_name: str):
         try:
+            if self.s3_bucket_name in path:
+                path = path.replace(self.s3_bucket_name, "").lstrip("/")    
+            
             job_name = self.job_name_prefix + "_" + file_name
-            job_uri = "s3://" + self.s3_bucket_name + "/" + path + "/" + file_name
+            job_uri = "s3://" + self.s3_bucket_name + (path if path in (None, "") else "/" + path) + "/" + file_name
             
             aws_access_key_id = get_config("AWS_ACCESS_KEY_ID")
             aws_secret_access_key = get_config("AWS_SECRET_ACCESS_KEY")   
@@ -57,8 +60,8 @@ class AWSDiarizationTool(BaseTool):
             
             return self.process_results(self.get_data(status))
         except:
-            logger.error(f"Error occured.\n\n{traceback.format_exc()}")
-            return f"Error occured.\n\n{traceback.format_exc()}"
+            logger.error(f"Error occured.  Path: {path}, file_name: {file_name}\n\n{traceback.format_exc()}")
+            return f"Error occured.  Path: {path}, file_name: {file_name} \n\n{traceback.format_exc()}"
         
     # def get_data(self, data):
     #     transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
