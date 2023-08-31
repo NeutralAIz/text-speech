@@ -23,8 +23,10 @@ def handle_s3_path(filepath):
     except:
         logger.error(f"Error occured. filepath: {filepath}\n{traceback.format_exc()}")
 
-def ensure_path(filepath, root_path):    # pattern to match any s3 url format
+def ensure_path(filepath):    # pattern to match any s3 url format
     new_filepath = ""
+    root_path = ""
+    
     if filepath == "/":
         filepath = ""
 
