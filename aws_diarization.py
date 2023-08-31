@@ -80,10 +80,13 @@ class AWSDiarizationTool(BaseTool):
             return f"Error occured. URI: {job_uri} Path: {path}, file_name: {file_name} \n\n{traceback.format_exc()}"
         
     def get_data(self, data):
-        transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
-        file_name = self.get_filename_from_url(transcript_url)
-        add_file_to_resources(self, file_name, self.toolkit_config.session)
-        return get_file_content(file_name, self.agent_id, self.agent_execution_id )
+        try:
+            transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
+            file_name = self.get_filename_from_url(transcript_url)
+            add_file_to_resources(self, file_name, self.toolkit_config.session)
+            return get_file_content(file_name, self.agent_id, self.agent_execution_id)
+        except:
+            logger.error(f"Error occured. file_name: {file_name}, transcript_url: {transcript_url}, \n\n{traceback.format_exc()}")
         
     def get_filename_from_url(self, url):
         """
