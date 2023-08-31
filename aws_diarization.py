@@ -80,8 +80,8 @@ class AWSDiarizationTool(BaseTool):
         try:
             transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
             file_name = self.get_filename_from_url(transcript_url)
-            add_file_to_resources(self.toolkit_config.session, file_name, self.agent_id, self.agent_execution_id)
-            return get_file_content(self.toolkit_config.session, file_name, self.agent_id, self.agent_execution_id)
+            resource = add_file_to_resources(self.toolkit_config.session, file_name, self.agent_id, self.agent_execution_id)
+            return get_file_content(self.toolkit_config.session, resource.path + resource.name, self.agent_id, self.agent_execution_id)
         except:
             logger.error(f"Error occured. file_name: {file_name}, transcript_url: {transcript_url}, \n\n{traceback.format_exc()}")
         
