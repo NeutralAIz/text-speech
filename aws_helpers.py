@@ -11,31 +11,41 @@ import traceback
 import re
 
 def handle_s3_path(filepath):
+    try:
 
-    # pattern to match any s3 url format
-    s3_pattern = r"s3://[^/]+/"
+        # pattern to match any s3 url format
+        s3_pattern = r"s3://[^/]+/"
 
-    # removing the s3 url if it exists
-    filepath = re.sub(s3_pattern, '', filepath, count=1)
+        # removing the s3 url if it exists
+        filepath = re.sub(s3_pattern, '', filepath, count=1)
 
-    return ensure_path(filepath)
+        return ensure_path(filepath)
+    except:
+        logger.error(f"Error occured. filepath: {filepath}\n{traceback.format_exc()}")
 
-def ensure_path(filepath, root_path):
-    root_path = ResourceHelper().get_root_output_dir()
+def ensure_path(filepath, root_path):    # pattern to match any s3 url format
+    new_filepath = ""
+    if filepath == "/":
+        filepath = ""
 
-    absolute_root = os.path.abspath(root_path)
-    absolute_file = os.path.abspath(filepath)
-    if absolute_file.startswith(absolute_root):
-        return filepath
-    else:
-        parts_of_file_path = filepath.split(os.sep)
-        parts_of_root_path = root_path.split(os.sep)
-        for path in parts_of_root_path:
-            if path in parts_of_file_path:
-                parts_of_file_path.remove(path)
-        missing_path = os.sep.join(parts_of_file_path)
-        new_filepath = os.path.join(root_path, missing_path)
-        return new_filepath
+    try:
+        root_path = ResourceHelper().get_root_output_dir()
+
+        absolute_root = os.path.abspath(root_path)
+        absolute_file = os.path.abspath(filepath)
+        if absolute_file.startswith(absolute_root):
+            return filepath
+        else:
+            parts_of_file_path = filepath.split(os.sep)
+            parts_of_root_path = root_path.split(os.sep)
+            for path in parts_of_root_path:
+                if path in parts_of_file_path:
+                    parts_of_file_path.remove(path)
+            missing_path = os.sep.join(parts_of_file_path)
+            new_filepath = os.path.join(root_path, missing_path)
+            return new_filepath
+    except:
+        logger.error(f"Error occured. filepath: {filepath}, root_path: {root_path}, new_filepath: {new_filepath}\n\n{traceback.format_exc()}")
 
 
 def get_file_content(session, file_name: str, agent_id: int, agent_execution_id: int):
