@@ -87,65 +87,71 @@ class AWSDiarizationTool(BaseTool):
             logger.error(f"Error occured. file_name: {file_name}, transcript_url: {transcript_url}, \n\n{traceback.format_exc()}")
         
     def get_filename_from_url(self, url):
-        """
-        Get the file path from URL, after bucket name.
-            
-        :param url: The S3 URL
-        """
-        url_pieces = url.split('/')
-        
-        amazonaws_index = None
-        for i, piece in enumerate(url_pieces):
-            if "amazonaws.com" in piece:
-                amazonaws_index = i
-                break
-        
-        # the part after bucket is the file path
-        file_path = '/'.join(url_pieces[amazonaws_index + 2:])
+        try:
+            """
+            Get the file path from URL, after bucket name.
                 
-        return file_path
+            :param url: The S3 URL
+            """
+            url_pieces = url.split('/')
+            
+            amazonaws_index = None
+            for i, piece in enumerate(url_pieces):
+                if "amazonaws.com" in piece:
+                    amazonaws_index = i
+                    break
+            
+            # the part after bucket is the file path
+            file_path = '/'.join(url_pieces[amazonaws_index + 2:])
+                    
+            return file_path
+        except:
+            logger.error(f"Error occured. file_path: {file_path}, url: {url}, \n\n{traceback.format_exc()}")
 
     def process_results(self, data):
+        try:
+            segments = data['results']['speaker_labels']['segments']
+            items = data['results']['items']
 
-        segments = data['results']['speaker_labels']['segments']
-        items = data['results']['items']
+            master_transcript = {}
+            confidences = []
 
-        master_transcript = {}
-        confidences = []
+            for seg in segments:
+                speaker = seg['speaker_label']
+                start_time = float(seg['start_time'])
+                end_time = float(seg['end_time'])
+                
+                this_segment = {}
+                
+                for item in items:
+                    if 'start_time' in item.keys():
+                        item_start = float(item['start_time'])
+                        item_end = float(item['end_time'])
+                        if item_start >= start_time and item_end <= end_time:
+                            confidences.append(float(item['alternatives'][0]['confidence']))
+                            if 'content' in item['alternatives'][0].keys():
+                                word = item['alternatives'][0]['content']
+                                if speaker in this_segment.keys():
+                                    this_segment[speaker].append(word)
+                                else:
+                                    this_segment[speaker] = [word]
+                
+                master_transcript.update(this_segment)
 
-        for seg in segments:
-            speaker = seg['speaker_label']
-            start_time = float(seg['start_time'])
-            end_time = float(seg['end_time'])
-            
-            this_segment = {}
-            
-            for item in items:
-                if 'start_time' in item.keys():
-                    item_start = float(item['start_time'])
-                    item_end = float(item['end_time'])
-                    if item_start >= start_time and item_end <= end_time:
-                        confidences.append(float(item['alternatives'][0]['confidence']))
-                        if 'content' in item['alternatives'][0].keys():
-                            word = item['alternatives'][0]['content']
-                            if speaker in this_segment.keys():
-                                this_segment[speaker].append(word)
-                            else:
-                                this_segment[speaker] = [word]
-            
-            master_transcript.update(this_segment)
+            total_length = 0
+            for seg in segments:
+                total_length += (float(seg['end_time']) - float(seg['start_time'])) * 1000
 
-        total_length = 0
-        for seg in segments:
-            total_length += (float(seg['end_time']) - float(seg['start_time'])) * 1000
+            average_confidence = sum(confidences)/len(confidences)
 
-        average_confidence = sum(confidences)/len(confidences)
+            result_text = ""
 
-        result_text = ""
+            for speaker, words in master_transcript.items():
+                result_text = result_text + f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}'
 
-        for speaker, words in master_transcript.items():
-            result_text = result_text + f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}'
+            result_text = result_text + f'\nTotal Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}'
 
-        result_text = result_text + f'\nTotal Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}'
-
+        except:
+            logger.error(f"Error occured. data: {data}, result_text: {result_text}, \n\n{traceback.format_exc()}")
+        
         return result_text
