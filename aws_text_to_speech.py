@@ -7,9 +7,7 @@ from pydantic import BaseModel, Field
 from superagi.tools.base_tool import BaseTool
 from superagi.config.config import get_config
 from superagi.lib.logger import logger
-from superagi.helper.resource_helper import ResourceHelper
-from superagi.models.agent import Agent
-from superagi.models.agent_execution import AgentExecution
+from aws_helpers import add_file_to_resources
 
 class AWSTextToSpeechSchema(BaseModel):
     text: str = Field(
@@ -110,7 +108,7 @@ class AWSTextToSpeechTool(BaseTool):
                 file_name = audio_file_url.split("/")[-1]
                 
                 # Pass this session to the Helper method
-                self.add_audio_to_resources(file_name, self.toolkit_config.session)
+                add_file_to_resources(self, file_name, self.toolkit_config.session)
                 print("Text to Speech conversion completed!")
 
             else:
@@ -120,9 +118,3 @@ class AWSTextToSpeechTool(BaseTool):
         except:
             logger.error(f"Error occured.\n\n{traceback.format_exc()}")
             return {traceback.format_exc()}
-        
-
-    def add_audio_to_resources(self, file_name, session):
-        agent = Agent.get_agent_from_id(self.toolkit_config.session, self.agent_id)
-        agent_execution = AgentExecution.get_agent_execution_from_id(session, self.agent_execution_id)
-        ResourceHelper.make_written_file_resource(file_name, agent, agent_execution, session)

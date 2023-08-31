@@ -9,6 +9,7 @@ from superagi.lib.logger import logger
 import requests
 import random
 import string
+from aws_helpers import add_file_to_resources, get_file_content
 
 class AWSDiarizationSchema(BaseModel):
     path: str = Field(
@@ -26,6 +27,9 @@ class AWSDiarizationTool(BaseTool):
         "Automated speech recognition (ASR) tool that converts speech from an audio "
         "file into raw text")
     args_schema: Type[AWSDiarizationSchema] = AWSDiarizationSchema
+
+    agent_id: int = None
+    agent_execution_id: int = None
 
     s3_bucket_name = "neutralaiz-superagi-demo"
     region_name = 'us-east-1'
@@ -74,13 +78,31 @@ class AWSDiarizationTool(BaseTool):
         
     def get_data(self, data):
         transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
-        response = requests.get(transcript_url)
-        if response.status_code == 200:
-            return response.text
-        else:
-            return f"Error occured.\n\n{traceback.format_exc()}"
+        file_name = self.get_filename_from_url(transcript_url)
+        add_file_to_resources(self, file_name, self.toolkit_config.session)
+        return get_file_content(file_name, self.agent_id, self.agent_execution_id )
         
+    def get_filename_from_url(self, url):
+        """
+        Get the file path from URL, after bucket name.
+            
+        :param url: The S3 URL
+        """
+        url_pieces = url.split('/')
+        
+        amazonaws_index = None
+        for i, piece in enumerate(url_pieces):
+            if "amazonaws.com" in piece:
+                amazonaws_index = i
+                break
+        
+        # the part after bucket is the file path
+        file_path = '/'.join(url_pieces[amazonaws_index + 2:])
+                
+        return file_path
+
     def process_results(self, data):
+
         segments = data['results']['speaker_labels']['segments']
         items = data['results']['items']
 
