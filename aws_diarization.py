@@ -58,7 +58,7 @@ class AWSDiarizationTool(BaseTool):
             return self.process_results(self.get_data(status))
         except:
             logger.error(f"Error occured.\n\n{traceback.format_exc()}")
-            return f"Error occured.\n\n{traceback.format_exc()}
+            return f"Error occured.\n\n{traceback.format_exc()}"
         
     # def get_data(self, data):
     #     transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
