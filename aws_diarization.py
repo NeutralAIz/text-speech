@@ -150,8 +150,8 @@ class AWSDiarizationTool(BaseTool):
                 result_text = result_text + f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}'
 
             result_text = result_text + f'\nTotal Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}'
+        
+            return result_text
 
         except:
             logger.error(f"Error occured. data: {data}, \n\n{traceback.format_exc()}")
-        
-        return result_text
