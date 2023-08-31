@@ -108,7 +108,7 @@ class AWSTextToSpeechTool(BaseTool):
                 file_name = audio_file_url.split("/")[-1]
                 
                 # Pass this session to the Helper method
-                add_file_to_resources(self, file_name, self.toolkit_config.session)
+                add_file_to_resources(self.toolkit_config.session, file_name, self.agent_id, self.agent_execution_id)
                 print("Text to Speech conversion completed!")
 
             else:
