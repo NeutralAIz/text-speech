@@ -123,6 +123,6 @@ class AWSTextToSpeechTool(BaseTool):
         
 
     def add_audio_to_resources(self, file_name, session):
-        agent = Agent.get_agent_from_id(session=self.toolkit_config.session, agent_id=self.agent_id)
+        agent = Agent.get_agent_from_id(self.toolkit_config.session, self.agent_id)
         agent_execution = AgentExecution.get_agent_execution_from_id(session, self.agent_execution_id)
         ResourceHelper.make_written_file_resource(file_name, agent, agent_execution, session)
