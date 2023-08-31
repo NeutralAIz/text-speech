@@ -43,7 +43,7 @@ class AWSDiarizationTool(BaseTool):
                 path = '' 
             
             job_name = self.job_name_prefix + "_" + file_name
-            job_uri = "s3://" + self.s3_bucket_name + (path if path in (None, "") else "/" + path) + "/" + unique_string + "_" + file_name
+            job_uri = "s3://" + self.s3_bucket_name + (path if path in (None, "") else "/" + path) + "/" + file_name
             
             aws_access_key_id = get_config("AWS_ACCESS_KEY_ID")
             aws_secret_access_key = get_config("AWS_SECRET_ACCESS_KEY")   
@@ -53,7 +53,7 @@ class AWSDiarizationTool(BaseTool):
                                       aws_secret_access_key=aws_secret_access_key)
 
             transcribe.start_transcription_job(
-                TranscriptionJobName = job_name,
+                TranscriptionJobName = unique_string + "_" + job_name,
                 Media = {'MediaFileUri': job_uri},
                 OutputBucketName = self.s3_bucket_name,
                 LanguageCode = 'en-US', 
