@@ -19,14 +19,16 @@ def handle_s3_path(filepath):
         # removing the s3 url if it exists
         filepath = re.sub(s3_pattern, '', filepath, count=1)
 
-        return ensure_path(filepath)
+        local_file_path = ensure_path(filepath)
+
+        return "resources" + local_file_path
     except:
         logger.error(f"Error occured. filepath: {filepath}\n{traceback.format_exc()}")
 
 def ensure_path(filepath):    # pattern to match any s3 url format
     new_filepath = ""
     root_path = ""
-    
+
     if filepath == "/":
         filepath = ""
 
