@@ -31,8 +31,12 @@ class AWSDiarizationTool(BaseTool):
     
     def _execute(self, path: str, file_name: str):
         try:
+            path = path.replace('s3://','')
             if self.s3_bucket_name in path:
-                path = path.replace(self.s3_bucket_name, "").lstrip("/")    
+                path = path.replace(self.s3_bucket_name, "").lstrip("/")  
+            
+            if path == '/':
+                path = '' 
             
             job_name = self.job_name_prefix + "_" + file_name
             job_uri = "s3://" + self.s3_bucket_name + (path if path in (None, "") else "/" + path) + "/" + file_name
