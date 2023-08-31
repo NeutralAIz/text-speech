@@ -70,8 +70,11 @@ class AWSDiarizationTool(BaseTool):
                     break
                 time.sleep(5)
 
-            #return status        
-            return self.process_results(self.get_data(status))
+            #return status
+
+            data = self.get_data(status)
+
+            return self.process_results(data)
         except:
             logger.error(f"Error occured. URI: {job_uri}, Path: {path}, file_name: {file_name}\n\n{traceback.format_exc()}")
             return f"Error occured. URI: {job_uri} Path: {path}, file_name: {file_name} \n\n{traceback.format_exc()}"
