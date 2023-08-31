@@ -7,6 +7,9 @@ from pydantic import BaseModel, Field
 from superagi.tools.base_tool import BaseTool
 from superagi.config.config import get_config
 from superagi.lib.logger import logger
+from superagi.helper.resource_helper import ResourceHelper
+from superagi.models.agent import Agent
+from superagi.models.agent_execution import AgentExecution
 
 class AWSTextToSpeechSchema(BaseModel):
     text: str = Field(
@@ -42,6 +45,9 @@ class AWSTextToSpeechTool(BaseTool):
     name = "AWS Text To Speech Tool"
     description = "Text To Speech tool that converts given text into speech and store the audio file into an S3 bucket.  Available voices: Male: <Adult: [Joey, Matthew], Child: [Justin, Kevin]>, Female: <Adult: [Joanna, Kendra, Kimberly, Salli], Child: [Ivy, Ruth]>"
     args_schema: Type[AWSTextToSpeechSchema] = AWSTextToSpeechSchema
+
+    agent_id: int = None
+    agent_execution_id: int = None    
 
     s3_bucket_name = "neutralaiz-superagi-demo"
     job_name_prefix = "AWSTextToSpeechJob"
@@ -98,6 +104,15 @@ class AWSTextToSpeechTool(BaseTool):
 
             if task_status['SynthesisTask']['TaskStatus'].upper() == 'COMPLETED':
                 print("Text to Speech conversion completed!")
+                
+                # Extract file name from the S3 URL
+                audio_file_url = task_status['SynthesisTask']["OutputUri"]
+                file_name = audio_file_url.split("/")[-1]
+                
+                # Pass this session to the Helper method
+                self.add_audio_to_resources(file_name, self.toolkit_config.session)
+                print("Text to Speech conversion completed!")
+
             else:
                 raise Exception(f"Task failed with status: {task_status['SynthesisTask']['TaskStatus']}")
 
@@ -105,3 +120,9 @@ class AWSTextToSpeechTool(BaseTool):
         except:
             logger.error(f"Error occured.\n\n{traceback.format_exc()}")
             return {traceback.format_exc()}
+        
+
+    def add_audio_to_resources(self, file_name, session):
+        self.agent = Agent.get_agent_from_id(session=self.toolkit_config.session, agent_id=self.agent_id)
+        self.agent_execution = AgentExecution.get_agent_execution_from_id(session, self.agent_execution_id)
+        ResourceHelper.make_written_file_resource(file_name, self.agent, self.agent_execution, session)
