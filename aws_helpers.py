@@ -52,6 +52,9 @@ def ensure_path(filepath):    # pattern to match any s3 url format
         logger.error(f"Error occured. filepath: {filepath}, root_path: {root_path}, new_filepath: {new_filepath}\n\n{traceback.format_exc()}")
 
 
+def transcribe_valid_characters(targetValue: str):
+    return re.sub(r'[^0-9a-zA-Z._-]+', '_', targetValue)
+
 def get_file_content(session, file_name: str, agent_id: int, agent_execution_id: int):
     """
     Read the content of a file.

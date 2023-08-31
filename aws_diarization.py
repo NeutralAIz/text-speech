@@ -8,7 +8,7 @@ from superagi.config.config import get_config
 from superagi.lib.logger import logger
 import random
 import string
-from aws_helpers import add_file_to_resources, get_file_content, handle_s3_path
+from aws_helpers import add_file_to_resources, get_file_content, handle_s3_path, transcribe_valid_characters
 
 
 
@@ -53,7 +53,7 @@ class AWSDiarizationTool(BaseTool):
                                       aws_secret_access_key=aws_secret_access_key)
 
             transcribe.start_transcription_job(
-                TranscriptionJobName = job_name,
+                TranscriptionJobName = transcribe_valid_characters(job_name),
                 Media = {'MediaFileUri': job_uri},
                 OutputBucketName = self.s3_bucket_name,
                 LanguageCode = 'en-US', 
