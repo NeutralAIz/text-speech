@@ -152,6 +152,6 @@ class AWSDiarizationTool(BaseTool):
             result_text = result_text + f'\nTotal Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}'
 
         except:
-            logger.error(f"Error occured. data: {data}, result_text: {result_text}, \n\n{traceback.format_exc()}")
+            logger.error(f"Error occured. data: {data}, \n\n{traceback.format_exc()}")
         
         return result_text
