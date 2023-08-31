@@ -61,8 +61,9 @@ class AWSDiarizationTool(BaseTool):
                 if status['TranscriptionJob']['TranscriptionJobStatus'] in ['COMPLETED', 'FAILED']:
                     break
                 time.sleep(5)
-            
-            return self.process_results(self.get_data(status))
+
+            return status        
+            #return self.process_results(self.get_data(status))
         except:
             logger.error(f"Error occured.  Path: {path}, file_name: {file_name}\n\n{traceback.format_exc()}")
             return f"Error occured.  Path: {path}, file_name: {file_name} \n\n{traceback.format_exc()}"
