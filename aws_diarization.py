@@ -8,12 +8,14 @@ from superagi.config.config import get_config
 from superagi.lib.logger import logger
 import random
 import string
-from aws_helpers import add_file_to_resources, get_file_content
+from aws_helpers import add_file_to_resources, get_file_content, handle_s3_path
+
+
 
 class AWSDiarizationSchema(BaseModel):
     path: str = Field(
         ...,
-        description="Directory path inside the bucket (hardcoded start at resources/app/workspace/)",
+        description="Directory path inside the bucket",
     )
     file_name: str = Field(
         ...,
@@ -37,14 +39,9 @@ class AWSDiarizationTool(BaseTool):
     def _execute(self, path: str, file_name: str):
         try:
             unique_string = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=6))
+            
+            path = handle_s3_path(path)
 
-            path = path.replace('s3://','')
-            if self.s3_bucket_name in path:
-                path = path.replace(self.s3_bucket_name, "").lstrip("/")  
-            
-            if path == '/':
-                path = '' 
-            
             job_name = self.job_name_prefix + "_" + unique_string + "_" + file_name
             job_uri = "s3://" + self.s3_bucket_name + (path if path in (None, "") else "/" + path) + "/" + file_name
             
@@ -79,33 +76,12 @@ class AWSDiarizationTool(BaseTool):
     def get_data(self, data):
         try:
             transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
-            file_name = self.get_filename_from_url(transcript_url)
+            file_name = handle_s3_path(transcript_url)
             resource = add_file_to_resources(self.toolkit_config.session, file_name, self.agent_id, self.agent_execution_id)
             return get_file_content(self.toolkit_config.session, resource.path + resource.name, self.agent_id, self.agent_execution_id)
         except:
             logger.error(f"Error occured. file_name: {file_name}, transcript_url: {transcript_url}, \n\n{traceback.format_exc()}")
-        
-    def get_filename_from_url(self, url):
-        try:
-            """
-            Get the file path from URL, after bucket name.
-                
-            :param url: The S3 URL
-            """
-            url_pieces = url.split('/')
-            
-            amazonaws_index = None
-            for i, piece in enumerate(url_pieces):
-                if "amazonaws.com" in piece:
-                    amazonaws_index = i
-                    break
-            
-            # the part after bucket is the file path
-            file_path = '/'.join(url_pieces[amazonaws_index + 2:])
-                    
-            return file_path
-        except:
-            logger.error(f"Error occured. file_path: {file_path}, url: {url}, \n\n{traceback.format_exc()}")
+
 
     def process_results(self, data):
         try:
