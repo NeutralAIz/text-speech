@@ -62,7 +62,7 @@ def get_file_content(session, file_name: str, agent_id: int, agent_execution_id:
         return {traceback.format_exc()}
 
 def add_file_to_resources(session, file_name, agent_id: int, agent_execution_id: int):
-    logger.error(f"Error occured.\n\n{file_name}")
+    logger.info(f"Target:{file_name}")
     agent = Agent.get_agent_from_id(session, agent_id)
     agent_execution = AgentExecution.get_agent_execution_from_id(session, agent_execution_id)
     ResourceHelper.make_written_file_resource(file_name, agent, agent_execution, session)
