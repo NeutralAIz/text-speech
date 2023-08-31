@@ -47,7 +47,7 @@ class AWSTextToSpeechTool(BaseTool):
     args_schema: Type[AWSTextToSpeechSchema] = AWSTextToSpeechSchema
 
     agent_id: int = None
-    agent_execution_id: int = None    
+    agent_execution_id: int = None
 
     s3_bucket_name = "neutralaiz-superagi-demo"
     job_name_prefix = "AWSTextToSpeechJob"
@@ -123,6 +123,6 @@ class AWSTextToSpeechTool(BaseTool):
         
 
     def add_audio_to_resources(self, file_name, session):
-        self.agent = Agent.get_agent_from_id(session=self.toolkit_config.session, agent_id=self.agent_id)
-        self.agent_execution = AgentExecution.get_agent_execution_from_id(session, self.agent_execution_id)
-        ResourceHelper.make_written_file_resource(file_name, self.agent, self.agent_execution, session)
+        agent = Agent.get_agent_from_id(session=self.toolkit_config.session, agent_id=self.agent_id)
+        agent_execution = AgentExecution.get_agent_execution_from_id(session, self.agent_execution_id)
+        ResourceHelper.make_written_file_resource(file_name, agent, agent_execution, session)
