@@ -13,7 +13,7 @@ from aws_helpers import add_file_to_resources, get_file_content
 class AWSDiarizationSchema(BaseModel):
     path: str = Field(
         ...,
-        description="Directory path inside the bucket (blank if in root)",
+        description="Directory path inside the bucket (hardcoded start at resources/app/workspace/)",
     )
     file_name: str = Field(
         ...,
