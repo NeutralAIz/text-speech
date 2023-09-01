@@ -21,11 +21,11 @@ def handle_s3_path(filepath):
     
         if extracted_path:
             # If pattern is found, use the captured group after domain
-            result = "resources/" + extracted_path.group(2)
+            result = extracted_path.group(2)
 
         logger.info(f"handle_s3_path: result:{result}")
 
-        return ensure_path(result)
+        return ensure_path("resources/" + result)
     except:
         logger.error(f"Error occured. filepath: {filepath}\n{traceback.format_exc()}")
 
