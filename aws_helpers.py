@@ -25,7 +25,7 @@ def handle_s3_path(filepath):
 
         logger.info(f"handle_s3_path: result:{result}")
 
-        return result
+        return ensure_path(result)
     except:
         logger.error(f"Error occured. filepath: {filepath}\n{traceback.format_exc()}")
 
