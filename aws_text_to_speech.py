@@ -105,10 +105,9 @@ class AWSTextToSpeechTool(BaseTool):
                 
                 # Extract file name from the S3 URL
                 audio_file_url = task_status['SynthesisTask']["OutputUri"]
-                file_name = audio_file_url.split("/")[-1]
                 
                 # Pass this session to the Helper method
-                add_file_to_resources(self.toolkit_config.session, file_name, self.agent_id, self.agent_execution_id)
+                add_file_to_resources(self.toolkit_config.session, audio_file_url, self.agent_id, self.agent_execution_id)
                 print("Text to Speech conversion completed!")
 
             else:
