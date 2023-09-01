@@ -13,20 +13,19 @@ import re
 def handle_s3_path(filepath):
     logger.info(f"handle_s3_path: filepath:{filepath}")
     try:
+    # Extract S3 path after domain (works for both https and s3 protocol)
+        extracted_path = re.search(r'(s3://[^/]+/|https://[^/]+/)(.*)', filepath, re.IGNORECASE)
 
-        # pattern to match any s3 url format
-        s3_pattern = r"s3://[^/]+/"
+        # If no match is found, return the original path
+        result = filepath
+    
+        if extracted_path:
+            # If pattern is found, use the captured group after domain
+            result = "resources/" + extracted_path.group(2)
 
-        # removing the s3 url if it exists
-        filepath = re.sub(s3_pattern, '', filepath, count=1)
+        logger.info(f"handle_s3_path: result:{result}")
 
-        local_file_path = ensure_path(filepath)
-
-        return_value = "resources" + local_file_path
-
-        logger.info(f"handle_s3_path: return_value:{return_value}")
-
-        return return_value
+        return result
     except:
         logger.error(f"Error occured. filepath: {filepath}\n{traceback.format_exc()}")
 
