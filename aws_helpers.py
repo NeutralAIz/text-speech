@@ -23,11 +23,11 @@ def handle_s3_path(filepath):
     else:
         filename = filepath  # If it's not http/https or s3, return the original string
     
-    result = "resources" + ensure_path(filename)
+    result = ensure_path(filename)
       
     return result
 
-def ensure_path(filepath):    # pattern to match any s3 url format
+def ensure_path(filepath, account_for_s3: bool = False):    # pattern to match any s3 url format
     logger.info(f"ensure_path: filepath:{filepath}")
     new_filepath = ""
     root_path = ""
@@ -36,7 +36,7 @@ def ensure_path(filepath):    # pattern to match any s3 url format
         filepath = ""
 
     try:
-        root_path = ResourceHelper().get_root_output_dir()
+        root_path = ResourceHelper().get_root_output_dir() if not account_for_s3 else "resources" + ResourceHelper().get_root_output_dir()
 
         absolute_root = os.path.abspath(root_path)
         absolute_file = os.path.abspath(filepath)
