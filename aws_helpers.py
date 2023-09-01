@@ -83,7 +83,6 @@ def get_file_content(session, file_name: str, agent_id: int, agent_execution_id:
                                                                                             agent_execution_id=agent_execution_id))
 
         temporary_file_path = None
-        final_name = final_path.split('/')[-1]
         
         save_directory = "/"
         
