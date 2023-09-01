@@ -38,7 +38,7 @@ class AWSDiarizationTool(BaseTool):
     
     def _execute(self, path: str, file_name: str):
         try:
-            logger.error(f"_execute: file_name: {file_name}, path: {path}")
+            logger.info(f"_execute: file_name: {file_name}, path: {path}")
             unique_string = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=6))
             
             path = handle_s3_path(path)
@@ -46,7 +46,7 @@ class AWSDiarizationTool(BaseTool):
             job_name = transcribe_valid_characters(self.job_name_prefix + "_" + unique_string + "_" + file_name)
             job_uri = "s3://" + self.s3_bucket_name + "/" + path + file_name
             
-            logger.error(f"_execute: job_name: {job_name}, job_uri: {job_uri}")
+            logger.info(f"_execute: job_name: {job_name}, job_uri: {job_uri}")
 
             aws_access_key_id = get_config("AWS_ACCESS_KEY_ID")
             aws_secret_access_key = get_config("AWS_SECRET_ACCESS_KEY")   
@@ -59,6 +59,7 @@ class AWSDiarizationTool(BaseTool):
                 TranscriptionJobName = job_name,
                 Media = {'MediaFileUri': job_uri},
                 OutputBucketName = self.s3_bucket_name,
+                OutputKey = path,
                 LanguageCode = 'en-US', 
                 Settings = {"ShowSpeakerLabels": True, "MaxSpeakerLabels": 3}    
             )
