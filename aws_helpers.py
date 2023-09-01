@@ -11,25 +11,21 @@ import traceback
 import re
 
 def handle_s3_path(filepath):
-    logger.info(f"handle_s3_path: filepath:{filepath}")
-    try:
-    # Extract S3 path after domain (works for both https and s3 protocol)
-        extracted_path = re.search(r'(s3://[^/]+/|https://[^/]+/)(.*)', filepath, re.IGNORECASE)
-
-        # If no match is found, return the original path
-        result = filepath
+    # Convert filepath to lower case for case insensitive comparison
+    filepath_lower = filepath.lower()
+    split_path = filepath.split("/")
+    # For http/https, the required path starts from 6th element (index 5)
+    if filepath_lower.startswith("http"):
+        filename = "/".join(split_path[5:])
+    # For s3, the required path starts from 4th element (index 3)
+    elif filepath_lower.startswith("s3"):
+        filename = "/".join(split_path[3:])
+    else:
+        filename = filepath  # If it's not http/https or s3, return the original string
     
-        if extracted_path:
-            # If pattern is found, use the captured group after domain
-            result = extracted_path.group(2)
-
-        result = "resources" + ensure_path(result)
-
-        logger.info(f"handle_s3_path: result:{result}")
-
-        return result
-    except:
-        logger.error(f"Error occured. filepath: {filepath}\n{traceback.format_exc()}")
+    result = "resources" + ensure_path(filename)
+      
+    return result
 
 def ensure_path(filepath):    # pattern to match any s3 url format
     logger.info(f"ensure_path: filepath:{filepath}")
