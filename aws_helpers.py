@@ -23,7 +23,7 @@ def handle_s3_path(filepath):
     else:
         filename = filepath  # If it's not http/https or s3, return the original string
     
-    result = ensure_path(filename)
+    result = ensure_path(filename, True)
       
     return result
 
