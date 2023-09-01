@@ -11,6 +11,7 @@ import traceback
 import re
 
 def handle_s3_path(filepath):
+    logger.info(f"handle_s3_path: filepath:{filepath}")
     try:
 
         # pattern to match any s3 url format
@@ -21,11 +22,16 @@ def handle_s3_path(filepath):
 
         local_file_path = ensure_path(filepath)
 
-        return "resources" + local_file_path
+        return_value = "resources" + local_file_path
+
+        logger.info(f"handle_s3_path: return_value:{return_value}")
+
+        return return_value
     except:
         logger.error(f"Error occured. filepath: {filepath}\n{traceback.format_exc()}")
 
 def ensure_path(filepath):    # pattern to match any s3 url format
+    logger.info(f"ensure_path: filepath:{filepath}")
     new_filepath = ""
     root_path = ""
 
@@ -47,13 +53,17 @@ def ensure_path(filepath):    # pattern to match any s3 url format
                     parts_of_file_path.remove(path)
             missing_path = os.sep.join(parts_of_file_path)
             new_filepath = os.path.join(root_path, missing_path)
+            logger.info(f"ensure_path: new_filepath:{new_filepath}")
             return new_filepath
     except:
         logger.error(f"Error occured. filepath: {filepath}, root_path: {root_path}, new_filepath: {new_filepath}\n\n{traceback.format_exc()}")
 
 
 def transcribe_valid_characters(targetValue: str):
-    return re.sub(r'[^0-9a-zA-Z._-]+', '_', targetValue)
+    logger.info(f"transcribe_valid_characters: targetValue:{targetValue}")
+    cleaned = re.sub(r'[^0-9a-zA-Z._-]+', '_', targetValue)
+    logger.info(f"transcribe_valid_characters: cleaned:{cleaned}")
+    return cleaned
 
 def get_file_content(session, file_name: str, agent_id: int, agent_execution_id: int):
     """
@@ -68,6 +78,7 @@ def get_file_content(session, file_name: str, agent_id: int, agent_execution_id:
         The content of the file as a string.
     """
     
+    logger.info(f"get_file_content: file_name:{file_name}")
     try:
         final_path = ResourceHelper.get_agent_read_resource_path(file_name, agent=Agent.get_agent_from_id(
             session=session, agent_id=agent_id), agent_execution=AgentExecution
@@ -95,6 +106,8 @@ def get_file_content(session, file_name: str, agent_id: int, agent_execution_id:
         if temporary_file_path is not None:
             final_path = temporary_file_path
 
+        logger.info(f"get_file_content: final_path:{final_path}")
+
         elements = partition(final_path)
         content = "\n\n".join([str(el) for el in elements])
 
@@ -107,7 +120,7 @@ def get_file_content(session, file_name: str, agent_id: int, agent_execution_id:
         return {traceback.format_exc()}
 
 def add_file_to_resources(session, file_name, agent_id: int, agent_execution_id: int):
-    logger.info(f"Target:{file_name}")
+    logger.info(f"add_file_to_resource: file_name:{file_name}")
     agent = Agent.get_agent_from_id(session, agent_id)
     agent_execution = AgentExecution.get_agent_execution_from_id(session, agent_execution_id)
     return ResourceHelper.make_written_file_resource(file_name, agent, agent_execution, session)
