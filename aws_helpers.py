@@ -84,12 +84,14 @@ def get_file_content(session, file_name: str, agent_id: int, agent_execution_id:
 
         temporary_file_path = None
         
-        save_directory = "/"
+        import os
+        file_name = os.path.basename(final_path)  # get the file name from the path
+        file_extension = file_name.split('.')[-1].lower() if '.' in file_name else ''
         
-        if final_path.split('/')[-1].lower().endswith('.txt'):
+        if file_extension in ("txt", "json"):
             return S3Helper().read_from_s3(final_path)
         else:
-            temporary_file_path = save_directory + file_name
+            temporary_file_path = final_path
             with open(temporary_file_path, "wb") as f:
                 contents = S3Helper().read_binary_from_s3(final_path)
                 f.write(contents)
