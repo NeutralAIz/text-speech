@@ -8,6 +8,7 @@ from superagi.config.config import get_config
 from superagi.lib.logger import logger
 import random
 import string
+import json
 from aws_helpers import add_file_to_resources, get_file_content, handle_s3_path, transcribe_valid_characters
 
 
@@ -89,6 +90,8 @@ class AWSDiarizationTool(BaseTool):
 
     def process_results(self, data):
         try:
+            data = json.loads(data)
+
             if 'speaker_labels' in data['results']:
                 segments = data['results']['speaker_labels']['segments']
             else:
