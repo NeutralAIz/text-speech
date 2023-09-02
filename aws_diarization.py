@@ -88,7 +88,7 @@ class AWSDiarizationTool(BaseTool):
             logger.error(f"Error occured. file_path: {file_path}, transcript_url: {transcript_url}, \n\n{traceback.format_exc()}")
 
 
-    def convert_time_stamp(timestamp: str) -> str:
+    def convert_time_stamp(self, timestamp: str) -> str:
         """ Function to help convert timestamps from s to H:M:S """
         delta = datetime.timedelta(seconds=float(timestamp))
         seconds = delta - datetime.timedelta(microseconds=delta.microseconds)
