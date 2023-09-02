@@ -89,42 +89,51 @@ class AWSDiarizationTool(BaseTool):
 
 
     def convert_time_stamp(self, timestamp: str) -> str:
-        """ Function to help convert timestamps from s to H:M:S """
+        """
+        Function to help convert timestamps from s to H:M:S
+        """
         delta = datetime.timedelta(seconds=float(timestamp))
         seconds = delta - datetime.timedelta(microseconds=delta.microseconds)
         return str(seconds)
 
-    def process_to_text(self, data, threshold_for_grey=0.98):
-        data = json.loads(data)
-        
-        with io.StringIO() as file:
+    def process_to_text(self, data: str, threshold_for_grey: float = 0.98) -> str:
+        """
+        This function takes a JSON string of transcribe data, extracts the key information, 
+        and writes it to a text string. Formatting is applied to highlight low confidence areas.
+        It also ensures punctuations and words are kept together without unwanted space.
 
-            # Document title and intro
+        :param data: The string of JSON data
+        :param threshold_for_grey: The confidence level below which transcriptions are considered low-confidence.
+        :return: Written text as a string
+        """
+            
+        data = json.loads(data)
+
+        with io.StringIO() as file:
+            # Begin by formatting and writing the document title and introduction
             title = f"Transcription of {data['jobName']}"
             file.write(f"{title}\n\n")
 
-            # Document intro
             file.write("Transcription using AWS Transcribe automatic speech recognition and"
                     " the 'tscribe' python package.\n")
             file.write(datetime.datetime.now().strftime("Document produced on %A %d %B %Y at %X.\n\n"))
 
             low_confidence_open = False
 
-            # Transcript
-            # If speaker identification
+            # If speaker identification is included in the results
             if "speaker_labels" in data["results"].keys():
 
-                # A segment is a blob of pronunciation and punctuation by an individual speaker
+                # A segment is a continuous block of speech from the same speaker
                 for segment in data["results"]["speaker_labels"]["segments"]:
 
-                    # If there is content in the segment, write the time and speaker
+                    # If the segment has any items, write the start time and the speaker
                     if len(segment["items"]) > 0:
+
                         file.write(f"{self.convert_time_stamp(segment['start_time'])} "
-                                f"{segment['speaker_label']}:")
+                            f"{segment['speaker_label']}:")
 
                         # For each word in the segment...
                         for word in segment["items"]:
-
                             # Get the word with the highest confidence
                             pronunciations = list(
                                 filter(
@@ -143,35 +152,44 @@ class AWSDiarizationTool(BaseTool):
                                 word_result[-1]["alternatives"], key=lambda x: x["confidence"]
                             )[-1]
 
-                            # If the word is low confidence and there is no open bracket, open one
+                            # Open bracket before low-confidence words
                             if float(result["confidence"]) < threshold_for_grey and not low_confidence_open:
                                 file.write(" [")
                                 low_confidence_open = True
+                            # Close bracket after low-confidence words
                             elif float(result["confidence"]) >= threshold_for_grey and low_confidence_open:
                                 file.write("] ")
-                                low_confidence_open = False 
+                                low_confidence_open = False
 
-                            # Write the word                        
-                            file.write(f"{result['content']}")
+                            # Prepare the word_to_write with no trailing space
+                            word_to_write = result['content']
 
-                            # If the next item is punctuation, write it
+                            # Initialise next_item as empty to handle cases when it is not updated in the try-except
+                            next_item = {}  
                             try:
-                                word_result_index = data["results"]["items"].index(
-                                    word_result[0]
-                                )
+                                # Get next item to check if it is punctuation
+                                word_result_index = data["results"]["items"].index(word_result[0])
                                 next_item = data["results"]["items"][word_result_index + 1]
+                                # If it's a punctuation mark, append it directly without a space
                                 if next_item["type"] == "punctuation":
-                                    file.write(next_item["alternatives"][0]["content"])
+                                    word_to_write += next_item["alternatives"][0]["content"]
                             except IndexError:
                                 pass
 
-                        # Close the bracket if we ended the segment on a low confidence word
+                            # If next_item isn't a punctuation, add a space so that words do not stick together  
+                            if next_item.get("type") != "punctuation":
+                                word_to_write += " "
+
+                            # Write the formatted word + punctuation / space as appropriate
+                            file.write(word_to_write)
+
+                        # Close bracket if we ended the segment on a low confidence word
                         if low_confidence_open:
                             file.write("]")
                             low_confidence_open = False 
 
-                        # Add a line break after each segment
+                        # Start a new line for the next segment
                         file.write("\n")
-                        
-            # Get written data as string
+
+            # Return what we've written as a continuous string
             return file.getvalue()
