@@ -96,7 +96,7 @@ class AWSDiarizationTool(BaseTool):
         seconds = delta - datetime.timedelta(microseconds=delta.microseconds)
         return str(seconds)
 
-    def process_to_text(self, data: str, threshold_for_grey: float = 0.98) -> str:
+    def process_to_text(self, data: str, threshold_for_grey: float = 0.96) -> str:
         """
         This function takes a JSON string of transcribe data, extracts the key information, 
         and writes it to a text string. Formatting is applied to highlight low confidence areas.
