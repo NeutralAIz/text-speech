@@ -9,9 +9,9 @@ from superagi.lib.logger import logger
 import random
 import string
 import json
+import json, datetime
+import io
 from aws_helpers import add_file_to_resources, get_file_content, handle_s3_path, transcribe_valid_characters
-
-
 
 class AWSDiarizationSchema(BaseModel):
     path: str = Field(
@@ -72,8 +72,8 @@ class AWSDiarizationTool(BaseTool):
                 time.sleep(5)
 
             data = self.get_data(status)
-
-            return self.process_results(data)
+            result = self.process_to_text(data)
+            return result
         except:
             logger.error(f"Error occured. URI: {job_uri}, Path: {path}, file_name: {file_name}\n\n{traceback.format_exc()}")
             return f"Error occured. URI: {job_uri} Path: {path}, file_name: {file_name} \n\n{traceback.format_exc()}"
@@ -88,52 +88,90 @@ class AWSDiarizationTool(BaseTool):
             logger.error(f"Error occured. file_path: {file_path}, transcript_url: {transcript_url}, \n\n{traceback.format_exc()}")
 
 
-    def process_results(self, data):
-        try:
-            data = json.loads(data)
+    def convert_time_stamp(timestamp: str) -> str:
+        """ Function to help convert timestamps from s to H:M:S """
+        delta = datetime.timedelta(seconds=float(timestamp))
+        seconds = delta - datetime.timedelta(microseconds=delta.microseconds)
+        return str(seconds)
 
-            if 'speaker_labels' in data['results']:
-                segments = data['results']['speaker_labels']['segments']
-            else:
-                segments = [{'start_time': item['start_time'], 'end_time': item['end_time'], 
-                            'speaker_label': 'spk_0'} for item in data['results']['items'] if 'start_time' in item]
-                            
-            speakers = data['results']['speaker_labels']['speakers'] if 'speaker_labels' in data['results'] else 1
-            items = data['results']['items']
-
-            master_transcript = {f'spk_{i}': [] for i in range(speakers)}
-            confidences = []
-
-            for seg in segments:
-                speaker = seg['speaker_label']
-                start_time = float(seg['start_time'])
-                end_time = float(seg['end_time'])
-
-                for item in items:
-                    if 'start_time' in item.keys() and ('speaker_label' not in item or item['speaker_label'] == speaker):
-                        item_start = float(item['start_time'])
-                        item_end = float(item['end_time'])
-                        if item_start >= start_time and item_end <= end_time:
-                            if 'confidence' in item['alternatives'][0].keys():
-                                confidences.append(float(item['alternatives'][0]['confidence']))
-                            if 'content' in item['alternatives'][0].keys():
-                                word = item['alternatives'][0]['content']
-                                master_transcript[speaker].append(word)
-
-            total_length = 0
-            for seg in segments:
-                total_length += (float(seg['end_time']) - float(seg['start_time'])) * 1000
-
-            average_confidence = sum(confidences)/len(confidences) if confidences else 0.0
-
-            result_text = ''
-
-            for speaker, words in master_transcript.items():
-                result_text += f'{int(float(segments[0]["start_time"]) * 1000)}ms : Speaker {int(speaker[-1])+1} : {" ".join(words)}\n'
-
-            result_text += f'Total Length: {int(total_length)}ms, Average Confidence: {average_confidence : .2f}'
+    def process_to_text(self, data, threshold_for_grey=0.98):
+        data = json.loads(data)
         
-            return result_text
+        with io.StringIO() as file:
 
-        except Exception as e:
-            logger.error(f"Error occurred. data: {data}, \n\n{traceback.format_exc()}")
+            # Document title and intro
+            title = f"Transcription of {data['jobName']}"
+            file.write(f"{title}\n\n")
+
+            # Document intro
+            file.write("Transcription using AWS Transcribe automatic speech recognition and"
+                    " the 'tscribe' python package.\n")
+            file.write(datetime.datetime.now().strftime("Document produced on %A %d %B %Y at %X.\n\n"))
+
+            low_confidence_open = False
+
+            # Transcript
+            # If speaker identification
+            if "speaker_labels" in data["results"].keys():
+
+                # A segment is a blob of pronunciation and punctuation by an individual speaker
+                for segment in data["results"]["speaker_labels"]["segments"]:
+
+                    # If there is content in the segment, write the time and speaker
+                    if len(segment["items"]) > 0:
+                        file.write(f"{self.convert_time_stamp(segment['start_time'])} "
+                                f"{segment['speaker_label']}:")
+
+                        # For each word in the segment...
+                        for word in segment["items"]:
+
+                            # Get the word with the highest confidence
+                            pronunciations = list(
+                                filter(
+                                    lambda x: x["type"] == "pronunciation",
+                                    data["results"]["items"],
+                                )
+                            )
+                            word_result = list(
+                                filter(
+                                    lambda x: x["start_time"] == word["start_time"]
+                                    and x["end_time"] == word["end_time"],
+                                    pronunciations,
+                                )
+                            )
+                            result = sorted(
+                                word_result[-1]["alternatives"], key=lambda x: x["confidence"]
+                            )[-1]
+
+                            # If the word is low confidence and there is no open bracket, open one
+                            if float(result["confidence"]) < threshold_for_grey and not low_confidence_open:
+                                file.write(" [")
+                                low_confidence_open = True
+                            elif float(result["confidence"]) >= threshold_for_grey and low_confidence_open:
+                                file.write("] ")
+                                low_confidence_open = False 
+
+                            # Write the word                        
+                            file.write(f"{result['content']}")
+
+                            # If the next item is punctuation, write it
+                            try:
+                                word_result_index = data["results"]["items"].index(
+                                    word_result[0]
+                                )
+                                next_item = data["results"]["items"][word_result_index + 1]
+                                if next_item["type"] == "punctuation":
+                                    file.write(next_item["alternatives"][0]["content"])
+                            except IndexError:
+                                pass
+
+                        # Close the bracket if we ended the segment on a low confidence word
+                        if low_confidence_open:
+                            file.write("]")
+                            low_confidence_open = False 
+
+                        # Add a line break after each segment
+                        file.write("\n")
+                        
+            # Get written data as string
+            return file.getvalue()
