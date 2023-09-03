@@ -1,7 +1,7 @@
 import time
 import boto3
 import traceback
-from typing import Type
+from typing import Type, Optional
 from pydantic import BaseModel, Field
 from superagi.tools.base_tool import BaseTool
 from superagi.config.config import get_config
@@ -14,20 +14,19 @@ import io
 from aws_helpers import add_file_to_resources, get_file_content, handle_s3_path, transcribe_valid_characters
 
 class AWSDiarizationSchema(BaseModel):
-    path: str = Field(
-        ...,
-        description="Directory path inside the bucket",
-    )
     file_name: str = Field(
         ...,
         description="Name of the target audio file",
+    )
+    path: Optional[str] = Field(
+        ...,
+        description="Directory path inside the bucket, or blank if in root.",
     )
 
 class AWSDiarizationTool(BaseTool):
     name = "AWS Diarization Tool"
     description = (
-        "Automated speech recognition (ASR) tool that converts speech from an audio "
-        "file into raw text")
+        "Tool that transcribes an audio file into raw text.  Handles multiple speakers.")
     args_schema: Type[AWSDiarizationSchema] = AWSDiarizationSchema
 
     agent_id: int = None
@@ -37,7 +36,7 @@ class AWSDiarizationTool(BaseTool):
     region_name = 'us-east-1'
     job_name_prefix = "AWSDiarizationJob"
     
-    def _execute(self, path: str, file_name: str):
+    def _execute(self, file_name: str, path: str = ""):
         try:
             logger.info(f"_execute: file_name: {file_name}, path: {path}")
             unique_string = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=6))
