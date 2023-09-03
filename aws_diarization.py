@@ -96,7 +96,7 @@ class AWSDiarizationTool(BaseTool):
         seconds = delta - datetime.timedelta(microseconds=delta.microseconds)
         return str(seconds)
 
-    def process_to_text(self, data: str, threshold_for_grey: float = 0.96) -> str:
+    def process_to_text(self, data: str, threshold_for_grey: float = 0.94) -> str:
         """
         This function takes a JSON string of transcribe data, extracts the key information, 
         and writes it to a text string. Formatting is applied to highlight low confidence areas.
@@ -170,15 +170,15 @@ class AWSDiarizationTool(BaseTool):
                                 # Get next item to check if it is punctuation
                                 word_result_index = data["results"]["items"].index(word_result[0])
                                 next_item = data["results"]["items"][word_result_index + 1]
-                                # If it's a punctuation mark, append it directly without a space
+                                # If it's a punctuation mark, append it directly without a space# If next_item isn't a punctuation, add a space so that words do not stick together  
                                 if next_item["type"] == "punctuation":
                                     word_to_write += next_item["alternatives"][0]["content"]
                             except IndexError:
                                 pass
 
                             # If next_item isn't a punctuation, add a space so that words do not stick together  
-                            if next_item.get("type") != "punctuation":
-                                word_to_write += " "
+                                if next_item.get("type") != "punctuation" and not low_confidence_open:
+                                    word_to_write += " "
 
                             # Write the formatted word + punctuation / space as appropriate
                             file.write(word_to_write)
