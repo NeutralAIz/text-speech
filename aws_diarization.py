@@ -11,16 +11,13 @@ import string
 import json
 import json, datetime
 import io
+import os
 from aws_helpers import add_file_to_resources, get_file_content, handle_s3_path, transcribe_valid_characters
 
 class AWSDiarizationSchema(BaseModel):
-    file_name: str = Field(
+    target_file: str = Field(
         ...,
-        description="Name of the target audio file",
-    )
-    path: Optional[str] = Field(
-        ...,
-        description="Directory path inside the bucket, or blank if in root.",
+        description="Name of the target audio file.",
     )
 
 class AWSDiarizationTool(BaseTool):
@@ -36,8 +33,11 @@ class AWSDiarizationTool(BaseTool):
     region_name = 'us-east-1'
     job_name_prefix = "AWSDiarizationJob"
     
-    def _execute(self, file_name: str, path: str = ""):
+    def _execute(self, target_file: str):
         try:
+            file_name = os.path.basename(target_file)
+            path = os.path.dirname(target_file)
+
             logger.info(f"_execute: file_name: {file_name}, path: {path}")
             unique_string = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=6))
             
