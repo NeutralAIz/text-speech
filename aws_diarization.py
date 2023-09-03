@@ -95,108 +95,108 @@ class AWSDiarizationTool(BaseTool):
         seconds = delta - datetime.timedelta(microseconds=delta.microseconds)
         return str(seconds)
 
-def process_to_text(self, data: str, threshold_for_grey: float = 0.96) -> str:
-    """
-    This function takes a JSON string of transcribe data, extracts the key information, 
-    and formats it into a string. 
-    It applies formatting to highlight low-confidence areas.
-    It also ensures punctuations and words are kept together without unwanted space.
+    def process_to_text(self, data: str, threshold_for_grey: float = 0.96) -> str:
+        """
+        This function takes a JSON string of transcribe data, extracts the key information, 
+        and formats it into a string. 
+        It applies formatting to highlight low-confidence areas.
+        It also ensures punctuations and words are kept together without unwanted space.
 
-    :param data: JSON data as a string 
-    :param threshold_for_grey: Confidence level below which transcriptions are uncertain.
-    :return: Transcription formatted as a text string
-    """
-    
-    # Parse json from string format
-    data = json.loads(data)
-
-    # Open a stringIO object to write the transcription into
-    with io.StringIO() as file:
+        :param data: JSON data as a string 
+        :param threshold_for_grey: Confidence level below which transcriptions are uncertain.
+        :return: Transcription formatted as a text string
+        """
         
-        # Begin writing with job details and time of transcription
-        title = f"Transcription of {data['jobName']}"
-        file.write(f"{title}\n\n")
-        file.write("Transcription using AWS Transcribe automatic speech recognition and"
-                " the 'tscribe' python package.\n")
-        file.write(datetime.datetime.now().strftime("Document produced on %A %d %B %Y at %X.\n\n"))
+        # Parse json from string format
+        data = json.loads(data)
 
-        # Initialize boolean to track low confidence word sequences
-        low_confidence_open = False
-
-        # Check if there are speaker labels in the data
-        if "speaker_labels" in data["results"].keys():
+        # Open a stringIO object to write the transcription into
+        with io.StringIO() as file:
             
-            # For each speaker segment in the transcription labels
-            for segment in data["results"]["speaker_labels"]["segments"]:
+            # Begin writing with job details and time of transcription
+            title = f"Transcription of {data['jobName']}"
+            file.write(f"{title}\n\n")
+            file.write("Transcription using AWS Transcribe automatic speech recognition and"
+                    " the 'tscribe' python package.\n")
+            file.write(datetime.datetime.now().strftime("Document produced on %A %d %B %Y at %X.\n\n"))
+
+            # Initialize boolean to track low confidence word sequences
+            low_confidence_open = False
+
+            # Check if there are speaker labels in the data
+            if "speaker_labels" in data["results"].keys():
                 
-                # If there are segment items (words)
-                if len(segment["items"]) > 0:
+                # For each speaker segment in the transcription labels
+                for segment in data["results"]["speaker_labels"]["segments"]:
                     
-                    # Write the speaker name and start time
-                    file.write(f"{self.convert_time_stamp(segment['start_time'])} "
-                        f"{segment['speaker_label']}:")
-
-                    # For each word spoken by speaker
-                    for word in segment["items"]:
+                    # If there are segment items (words)
+                    if len(segment["items"]) > 0:
                         
-                        # Filter for pronunciation words
-                        pronunciations = list(
-                            filter(
-                                lambda x: x["type"] == "pronunciation",
-                                data["results"]["items"],
+                        # Write the speaker name and start time
+                        file.write(f"{self.convert_time_stamp(segment['start_time'])} "
+                            f"{segment['speaker_label']}:")
+
+                        # For each word spoken by speaker
+                        for word in segment["items"]:
+                            
+                            # Filter for pronunciation words
+                            pronunciations = list(
+                                filter(
+                                    lambda x: x["type"] == "pronunciation",
+                                    data["results"]["items"],
+                                )
                             )
-                        )
-                        
-                        # Find the exact pronunciation item for current word
-                        word_result = list(
-                            filter(
-                                lambda x: x["start_time"] == word["start_time"]
-                                and x["end_time"] == word["end_time"],
-                                pronunciations,
+                            
+                            # Find the exact pronunciation item for current word
+                            word_result = list(
+                                filter(
+                                    lambda x: x["start_time"] == word["start_time"]
+                                    and x["end_time"] == word["end_time"],
+                                    pronunciations,
+                                )
                             )
-                        )
-                        
-                        # Get the alternative with highest confidence from word
-                        result = sorted(
-                            word_result[-1]["alternatives"], key=lambda x: x["confidence"]
-                        )[-1]
+                            
+                            # Get the alternative with highest confidence from word
+                            result = sorted(
+                                word_result[-1]["alternatives"], key=lambda x: x["confidence"]
+                            )[-1]
 
-                        # If the confidence level is lower than threshold, start a low-confidence sequence
-                        if float(result["confidence"]) < threshold_for_grey and not low_confidence_open:
-                            file.write(" [")
-                            low_confidence_open = True
+                            # If the confidence level is lower than threshold, start a low-confidence sequence
+                            if float(result["confidence"]) < threshold_for_grey and not low_confidence_open:
+                                file.write(" [")
+                                low_confidence_open = True
 
-                        # Get the next item, check if it's punctuation to avoid space before it
-                        word_to_write = result['content'] + " "
-                        next_item = {}  
-                        try:
-                            word_result_index = data["results"]["items"].index(word_result[0])
-                            next_item = data["results"]["items"][word_result_index + 1]
-                            if next_item["type"] == "punctuation":
-                                if next_item["alternatives"][0]["content"] in [".", "?", "!"]:
-                                    word_to_write = word_to_write.rstrip() + next_item["alternatives"][0]["content"] + "  " 
-                                elif next_item["alternatives"][0]["content"] in [",", ";"]:
-                                    word_to_write = word_to_write.rstrip() + next_item["alternatives"][0]["content"] + " " 
-                                else:
-                                    word_to_write += next_item["alternatives"][0]["content"]
-                        except IndexError:
-                            pass
+                            # Get the next item, check if it's punctuation to avoid space before it
+                            word_to_write = result['content'] + " "
+                            next_item = {}  
+                            try:
+                                word_result_index = data["results"]["items"].index(word_result[0])
+                                next_item = data["results"]["items"][word_result_index + 1]
+                                if next_item["type"] == "punctuation":
+                                    if next_item["alternatives"][0]["content"] in [".", "?", "!"]:
+                                        word_to_write = word_to_write.rstrip() + next_item["alternatives"][0]["content"] + "  " 
+                                    elif next_item["alternatives"][0]["content"] in [",", ";"]:
+                                        word_to_write = word_to_write.rstrip() + next_item["alternatives"][0]["content"] + " " 
+                                    else:
+                                        word_to_write += next_item["alternatives"][0]["content"]
+                            except IndexError:
+                                pass
 
-                        # If the word confidence is above threshold, finish a low-confidence sequence
-                        if float(result["confidence"]) >= threshold_for_grey and low_confidence_open:
-                            file.write(word_to_write.rstrip())  # Remove trailing space
+                            # If the word confidence is above threshold, finish a low-confidence sequence
+                            if float(result["confidence"]) >= threshold_for_grey and low_confidence_open:
+                                file.write(word_to_write.rstrip())  # Remove trailing space
+                                file.write("] ")  
+                                low_confidence_open = False
+                            else:
+                                file.write(word_to_write)
+
+                        # If there is an unclosed low-confidence sequence at the end of speaker segment, close it
+                        if low_confidence_open:
                             file.write("] ")  
-                            low_confidence_open = False
-                        else:
-                            file.write(word_to_write)
+                            low_confidence_open = False 
 
-                    # If there is an unclosed low-confidence sequence at the end of speaker segment, close it
-                    if low_confidence_open:
-                        file.write("] ")  
-                        low_confidence_open = False 
+                        # Add a new line after each speaker segment
+                        file.write("\n")  
 
-                    # Add a new line after each speaker segment
-                    file.write("\n")  
-
-        # Get the resulting transcription string from the StringIO object
-        return file.getvalue()
+            # Get the resulting transcription string from the StringIO object
+            return file.getvalue()
