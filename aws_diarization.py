@@ -1,7 +1,7 @@
 import time
 import boto3
 import traceback
-from typing import Type, Optional
+from typing import Type
 from pydantic import BaseModel, Field
 from superagi.tools.base_tool import BaseTool
 from superagi.config.config import get_config
