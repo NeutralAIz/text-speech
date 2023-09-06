@@ -44,7 +44,7 @@ class AWSDiarizationTool(BaseTool):
             path = handle_s3_path(path)
 
             job_name = transcribe_valid_characters(self.job_name_prefix + "_" + unique_string + "_" + file_name)
-            job_uri = "s3://" + self.s3_bucket_name + "/" + path + ("/" if not file_name.startswith("/") and not path.endswith("/") else "")
+            job_uri = "s3://" + self.s3_bucket_name + "/" + path + ("/" if not file_name.startswith("/") and not path.endswith("/") else "") + file_name
             
             logger.info(f"_execute: job_name: {job_name}, job_uri: {job_uri}")
 
