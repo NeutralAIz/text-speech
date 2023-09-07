@@ -12,7 +12,7 @@ import json
 import json, datetime
 import io
 import os
-from aws_helpers import add_file_to_resources, get_file_content, handle_s3_path, transcribe_valid_characters
+from aws_helpers import add_file_to_resources, get_file_content, handle_s3_path, transcribe_valid_characters, ensure_path
 
 class AWSDiarizationSchema(BaseModel):
     target_file: str = Field(
@@ -40,7 +40,7 @@ class AWSDiarizationTool(BaseTool):
 
             unique_string = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=6))
             
-            path = handle_s3_path(path)
+            path = ensure_path(path)
             
             logger.info(f"_execute: file_name: {file_name}, path: {path}")
 
