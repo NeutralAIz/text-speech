@@ -10,6 +10,7 @@ from superagi.helper.s3_helper import S3Helper
 import traceback
 import re
 
+
 def handle_s3_path(filepath):
     logger.info(f"handle_s3_path - filepath:{filepath}")
     # Convert filepath to lower case for case insensitive comparison
