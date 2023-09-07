@@ -38,10 +38,11 @@ class AWSDiarizationTool(BaseTool):
             file_name = os.path.basename(target_file)
             path = os.path.dirname(target_file)
 
-            logger.info(f"_execute: file_name: {file_name}, path: {path}")
             unique_string = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=6))
             
             path = handle_s3_path(path)
+            
+            logger.info(f"_execute: file_name: {file_name}, path: {path}")
 
             job_name = transcribe_valid_characters(self.job_name_prefix + "_" + unique_string + "_" + file_name)
             job_uri = "s3://" + self.s3_bucket_name + "/" + path + ("/" if not file_name.startswith("/") and not path.endswith("/") else "") + file_name
