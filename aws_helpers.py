@@ -11,6 +11,7 @@ import traceback
 import re
 
 def handle_s3_path(filepath):
+    logger.info(f"handle_s3_path - filepath:{filepath}")
     # Convert filepath to lower case for case insensitive comparison
     filepath_lower = filepath.lower()
     split_path = filepath.split("/")
@@ -28,7 +29,7 @@ def handle_s3_path(filepath):
     return result
 
 def ensure_path(filepath, account_for_s3: bool = False):    # pattern to match any s3 url format
-    logger.info(f"ensure_path: filepath:{filepath}")
+    logger.info(f"ensure_path - filepath:{filepath}")
     new_filepath = ""
     root_path = ""
 
@@ -50,7 +51,7 @@ def ensure_path(filepath, account_for_s3: bool = False):    # pattern to match a
                     parts_of_file_path.remove(path)
             missing_path = os.sep.join(parts_of_file_path)
             new_filepath = os.path.join(root_path, missing_path)
-            logger.info(f"ensure_path: new_filepath:{new_filepath}")
+            logger.info(f"ensure_path - new_filepath:{new_filepath}")
             return new_filepath
     except:
         logger.error(f"Error occured. filepath: {filepath}, root_path: {root_path}, new_filepath: {new_filepath}\n\n{traceback.format_exc()}")
