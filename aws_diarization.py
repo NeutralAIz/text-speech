@@ -40,7 +40,7 @@ class AWSDiarizationTool(BaseTool):
 
             unique_string = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=6))
             
-            path = ensure_path(path)
+            path = ensure_path(path, True)
             
             logger.info(f"_execute: file_name: {file_name}, path: {path}")
 

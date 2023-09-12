@@ -29,7 +29,7 @@ def handle_s3_path(filepath):
       
     return result
 
-def ensure_path(filepath, account_for_s3: bool = False):    # pattern to match any s3 url format
+def ensure_path(filepath, account_for_s3: bool = True):    # pattern to match any s3 url format
     logger.info(f"ensure_path - filepath:{filepath}")
     new_filepath = ""
     root_path = ""
