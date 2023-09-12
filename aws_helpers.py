@@ -42,6 +42,9 @@ def ensure_path(filepath, account_for_s3: bool = True):    # pattern to match an
 
         absolute_root = os.path.abspath(root_path)
         absolute_file = os.path.abspath(filepath)
+
+        logger.info(f"ensure_path. absolute_root: {absolute_root}, absolute_file: {absolute_file}, root_path: {root_path}\n\n{traceback.format_exc()}")
+        
         if absolute_file.startswith(absolute_root):
             return filepath
         else:
