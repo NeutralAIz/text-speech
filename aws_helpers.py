@@ -41,7 +41,7 @@ def ensure_path(filepath, account_for_s3: bool = True):    # pattern to match an
         root_path = ResourceHelper().get_root_output_dir() if not account_for_s3 else "resources" + ResourceHelper().get_root_output_dir()
 
         absolute_root = os.path.abspath(root_path)
-        absolute_file = os.path.abspath(filepath)
+        absolute_file = os.path.basename(filepath)
 
         logger.info(f"ensure_path. absolute_root: {absolute_root}, absolute_file: {absolute_file}, root_path: {root_path}\n\n{traceback.format_exc()}")
         
