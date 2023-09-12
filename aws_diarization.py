@@ -1,11 +1,12 @@
 import time
 import boto3
 import traceback
-from typing import Type
+from typing import Type, Optional
 from pydantic import BaseModel, Field
 from superagi.tools.base_tool import BaseTool
 from superagi.config.config import get_config
 from superagi.lib.logger import logger
+from superagi.resource_manager.file_manager import FileManager
 import random
 import string
 import json
@@ -32,6 +33,7 @@ class AWSDiarizationTool(BaseTool):
     s3_bucket_name = "neutralaiz-superagi-demo"
     region_name = 'us-east-1'
     job_name_prefix = "AWSDiarizationJob"
+    resource_manager: Optional[FileManager] = None
     
     def _execute(self, target_file: str):
         try:
@@ -71,9 +73,13 @@ class AWSDiarizationTool(BaseTool):
                     break
                 time.sleep(5)
 
-            data = self.get_data(status)
-            result = self.process_to_text(data)
-            return result
+            raw_data = self.get_data(status)
+            processed_data = self.process_to_text(raw_data)
+
+            processed_data_filename = transcribe_valid_characters(self.job_name_prefix + "_" + unique_string + "_" + "transcript" + "_" + file_name)
+            processed_data_filename = self.resource_manager.write_file(path + ("/" if not processed_data_filename.startswith("/") and not path.endswith("/") else "") + processed_data_filename, processed_data)
+
+            return processed_data_filename
         except:
             logger.error(f"Error occured. URI: {job_uri}, Path: {path}, file_name: {file_name}\n\n{traceback.format_exc()}")
             return f"Error occured. URI: {job_uri} Path: {path}, file_name: {file_name} \n\n{traceback.format_exc()}"
@@ -84,7 +90,7 @@ class AWSDiarizationTool(BaseTool):
             file_path = handle_s3_path(transcript_url)
             logger.error(f"get_data - transcript_url: {transcript_url}, file_path: {file_path}")
             resource = add_file_to_resources(self.toolkit_config.session, file_path, self.agent_id, self.agent_execution_id)
-            return get_file_content(self.toolkit_config.session, resource.name, self.agent_id, self.agent_execution_id)
+            file_content = get_file_content(self.toolkit_config.session, resource.name, self.agent_id, self.agent_execution_id)
         except:
             logger.error(f"Error occured. file_path: {file_path}, transcript_url: {transcript_url}")
 
