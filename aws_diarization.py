@@ -82,10 +82,11 @@ class AWSDiarizationTool(BaseTool):
         try:
             transcript_url = data['TranscriptionJob']['Transcript']['TranscriptFileUri']
             file_path = handle_s3_path(transcript_url)
+            logger.error(f"get_data - transcript_url: {transcript_url}, file_path: {file_path}}")
             resource = add_file_to_resources(self.toolkit_config.session, file_path, self.agent_id, self.agent_execution_id)
             return get_file_content(self.toolkit_config.session, resource.name, self.agent_id, self.agent_execution_id)
         except:
-            logger.error(f"Error occured. file_path: {file_path}, transcript_url: {transcript_url}, \n\n{traceback.format_exc()}")
+            logger.error(f"Error occured. file_path: {file_path}, transcript_url: {transcript_url}}")
 
 
     def convert_time_stamp(self, timestamp: str) -> str:
